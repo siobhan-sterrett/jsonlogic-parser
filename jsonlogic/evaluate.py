@@ -1,7 +1,7 @@
 from typing import Any, TypeVar, ParamSpec
 
-from .json import JSON, JSONPath
-from .jsonlogic import JSONLogic, is_jsonlogic
+from .json import JSON, JSONObject, JSONPath
+from .jsonlogic import is_jsonlogic
 from .op_function import do_ops
 
 class NullDataAccess(RuntimeError):
@@ -27,11 +27,14 @@ class NullData(object):
 T = TypeVar('T')
 P = ParamSpec('P')
 
-def evaluate(data: object, jsonlogic: JSONLogic) -> Any:
+def evaluate(data: object, jsonlogic: JSONObject) -> Any:
     """
     Initializes a base JSONPath, and forwards to _evaluate().
     """
-    return do_ops(object, JSONPath('$'), jsonlogic)
+    if is_jsonlogic(jsonlogic):
+        return do_ops(data, JSONPath('$'), jsonlogic)
+    else:
+        raise ValueError('More than one key found in jsonlogic object')
 
 def maybe_evaluate(data: object, path: JSONPath, json: Any) -> Any:
     """
@@ -41,7 +44,7 @@ def maybe_evaluate(data: object, path: JSONPath, json: Any) -> Any:
         return do_ops(data, path, json)
     return json
 
-def pure_evaluate(jsonlogic: JSONLogic) -> JSON:
+def pure_evaluate(jsonlogic: JSONObject) -> JSON:
     """
     Allows for evaluation of "pure" JSONLogic -- logic
     which does not reference the data object.

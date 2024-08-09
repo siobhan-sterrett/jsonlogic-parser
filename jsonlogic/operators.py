@@ -13,7 +13,7 @@ from .json import JSON, JSONArray, JSONPath, json_type
 from .jsonlogic import is_jsonlogic
 from .op_function import do_ops, op_fn, type_check
 
-class Missing:
+class _Missing:
     """
     A sentinel class.
     """
@@ -37,7 +37,7 @@ def _has_var(data: object, key: int | str) -> bool:
 
 @op_fn('var', pass_data=True)
 @type_check
-def op_var(data: object, path: JSONPath, key: int | str, default: JSON | Type[Missing] = Missing) -> Any | None:
+def op_var(data: object, path: JSONPath, key: int | str, default: JSON | Type[_Missing] = _Missing) -> Any | None:
     try:
         if isinstance(key, str):
             value: Any = data
@@ -50,7 +50,7 @@ def op_var(data: object, path: JSONPath, key: int | str, default: JSON | Type[Mi
         else:
             raise KeyError
     except (KeyError, IndexError):
-        if default is not Missing:
+        if default is not _Missing:
             return default
         else:
             return None
@@ -167,29 +167,29 @@ def op_or(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) ->
     return maybe_evaluate(data, path.join_path(idx), args[0])
 
 @op_fn('<')
-def op_lt(left: int | float, right: int | float, righter: int | float | Type[Missing] = Missing) -> bool:
-    if righter is Missing:
+def op_lt(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
+    if righter is _Missing:
         return left < right
     else:
         return left < right < cast(int | float, righter)
 
 @op_fn('<=')
-def op_lte(left: int | float, right: int | float, righter: int | float | Type[Missing] = Missing) -> bool:
-    if righter is Missing:
+def op_lte(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
+    if righter is _Missing:
         return left <= right
     else:
         return left <= right <= cast(int | float, righter)
 
 @op_fn('>')
-def op_gt(left: int | float, right: int | float, righter: int | float | Type[Missing] = Missing) -> bool:
-    if righter is Missing:
+def op_gt(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
+    if righter is _Missing:
         return left > right
     else:
         return left > right > cast(int | float, righter)
 
 @op_fn('>=')
-def op_gte(left: int | float, right: int | float, righter: int | float | Type[Missing] = Missing) -> bool:
-    if righter is Missing:
+def op_gte(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
+    if righter is _Missing:
         return left >= right
     else:
         return left >= right >= cast(int | float, righter)
@@ -216,8 +216,8 @@ def op_add(*args: int | float | str) -> int | float:
     return reduce(py_op.add, args, 0)
 
 @op_fn('-')
-def op_sub(left: int | float, right: int | float | Type[Missing] = Missing) -> int | float:
-    if right is Missing:
+def op_sub(left: int | float, right: int | float | Type[_Missing] = _Missing) -> int | float:
+    if right is _Missing:
         return -left
     return left - cast(int | float, right)
 
@@ -353,8 +353,8 @@ def op_cat(*args: str) -> str:
     return ''.join(args)
 
 @op_fn('substr')
-def op_substr(arg: str, start: int, end: int | Type[Missing] = Missing) -> str:
-    if end is Missing:
+def op_substr(arg: str, start: int, end: int | Type[_Missing] = _Missing) -> str:
+    if end is _Missing:
         end = len(arg)
     return arg[start:end]
 
