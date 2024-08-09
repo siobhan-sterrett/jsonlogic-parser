@@ -11,7 +11,7 @@ from typing import (
     cast, get_args, get_origin, get_overloads, overload
 )
 
-from .evaluate import Data, maybe_evaluate
+from .evaluate import maybe_evaluate
 from .json import JSONArray, JSONPath
 from .jsonlogic import JSONLogic
 from .op_function import Operator
@@ -31,7 +31,7 @@ def op_args(jsonlogic: JSONLogic) -> tuple[Operator, JSONArray]:
     else:
         return op, [arg]
 
-def do_ops(data: Data, path: JSONPath, jsonlogic: JSONLogic) -> Any:
+def do_ops(data: object, path: JSONPath, jsonlogic: JSONLogic) -> Any:
     """
     The main evaluation logic.
 
@@ -54,7 +54,7 @@ Operator = NewType('Operator', str)
 T = TypeVar('T')
 P = ParamSpec('P')
 
-OpFunction = Callable[Concatenate[Data, JSONPath, P], T]
+OpFunction = Callable[Concatenate[object, JSONPath, P], T]
 """
 An OpFunction is a function that's called during
 evaluation of a data object. Each operator is associated
@@ -157,7 +157,7 @@ def op_fn(_op: str, *, evaluate_args: bool = True, pass_data: bool = False) -> C
         else:
             _fn = cast(Callable[P, T], fn)
             @wraps(_fn)
-            def op_fn(data: Data, path: JSONPath, *args: P.args, **kwargs: P.kwargs):
+            def op_fn(data: object, path: JSONPath, *args: P.args, **kwargs: P.kwargs):
                 return _fn(*args, **kwargs)
             return op_fn
 
@@ -171,7 +171,7 @@ def op_fn(_op: str, *, evaluate_args: bool = True, pass_data: bool = False) -> C
         op_fn = to_op_fn(fn)
         
         @wraps(op_fn)
-        def wrapper(data: Data, path: JSONPath, *_args: P.args, **kwargs: P.kwargs) -> T:
+        def wrapper(data: object, path: JSONPath, *_args: P.args, **kwargs: P.kwargs) -> T:
             if evaluate_args:
                 args = tuple(
                     maybe_evaluate(data, path.join_path(op).join_path(i), arg)

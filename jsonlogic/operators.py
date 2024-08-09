@@ -8,7 +8,7 @@ from typing import (
     cast, overload
 )
 
-from .evaluate import Data, maybe_evaluate
+from .evaluate import maybe_evaluate
 from .json import JSON, JSONArray, JSONPath, json_type
 from .jsonlogic import is_jsonlogic
 from .op_function import do_ops, op_fn, type_check
@@ -19,7 +19,7 @@ class Missing:
     """
     pass
 
-def _has_var(data: Data, key: int | str) -> bool:
+def _has_var(data: object, key: int | str) -> bool:
     try:
         if isinstance(key, str):
             value: Any = data
@@ -37,7 +37,7 @@ def _has_var(data: Data, key: int | str) -> bool:
 
 @op_fn('var', pass_data=True)
 @type_check
-def op_var(data: Data, path: JSONPath, key: int | str, default: JSON | Type[Missing] = Missing) -> Any | None:
+def op_var(data: object, path: JSONPath, key: int | str, default: JSON | Type[Missing] = Missing) -> Any | None:
     try:
         if isinstance(key, str):
             value: Any = data
@@ -57,7 +57,7 @@ def op_var(data: Data, path: JSONPath, key: int | str, default: JSON | Type[Miss
 
 @op_fn('missing', pass_data=True)
 @type_check
-def op_missing(data: Data, path: JSONPath, *args: str) -> list[str]:
+def op_missing(data: object, path: JSONPath, *args: str) -> list[str]:
     return [
         arg for arg in args
         if not _has_var(data, arg)
@@ -65,14 +65,14 @@ def op_missing(data: Data, path: JSONPath, *args: str) -> list[str]:
 
 @op_fn('missing_some', pass_data=True)
 @type_check
-def op_missing_some(data: Data, path: JSONPath, count: int, args: list[str]) -> list[str]:
+def op_missing_some(data: object, path: JSONPath, count: int, args: list[str]) -> list[str]:
     missing = op_missing(data, path, *args)
     if len(args) - len(missing) < count:
         return missing
     return []
 
 @op_fn('if', evaluate_args=False, pass_data=True)
-def op_if(data: Data, path: JSONPath, if_arg: JSON, then_arg: JSON, *elses: JSON) -> Any | None:
+def op_if(data: object, path: JSONPath, if_arg: JSON, then_arg: JSON, *elses: JSON) -> Any | None:
     offset = 0
 
     if_arg = maybe_evaluate(data, path.join_path(offset), if_arg)
@@ -141,7 +141,7 @@ def op_not_not(arg: Any) -> bool:
     return not not arg
 
 @op_fn('and', evaluate_args=False, pass_data=True)
-def op_and(data: Data, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
+def op_and(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
     args = (left, right, *args)
     idx = 0
 
@@ -154,7 +154,7 @@ def op_and(data: Data, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> 
     return maybe_evaluate(data, path.join_path(idx), args[0])
 
 @op_fn('or', evaluate_args=False, pass_data=True)
-def op_or(data: Data, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
+def op_or(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
     args = (left, right, *args)
     idx = 0
 
@@ -234,7 +234,7 @@ def op_mod(left: int | float, right: int | float) -> int | float:
     return left % right
 
 @op_fn('map', evaluate_args=False, pass_data=True)
-def op_map(data: Data, path: JSONPath, argument: JSON, map_fn: JSON) -> list[Any]:
+def op_map(data: object, path: JSONPath, argument: JSON, map_fn: JSON) -> list[Any]:
     argument = maybe_evaluate(data, path.join_path(0), argument)
 
     if not isinstance(argument, list):
@@ -243,10 +243,10 @@ def op_map(data: Data, path: JSONPath, argument: JSON, map_fn: JSON) -> list[Any
     if not is_jsonlogic(map_fn):
         raise TypeError(f"Op 'map' expected jsonlogic object as second parameter, got {json_type(map_fn)}")
 
-    return [do_ops(cast(Data, arg), path.join_path(1), map_fn) for arg in argument]
+    return [do_ops(cast(object, arg), path.join_path(1), map_fn) for arg in argument]
 
 @op_fn('filter', evaluate_args=False, pass_data=True)
-def op_filter(data: Data, path: JSONPath, argument: JSON, filter_fn: JSON) -> list[Any]:
+def op_filter(data: object, path: JSONPath, argument: JSON, filter_fn: JSON) -> list[Any]:
     argument = maybe_evaluate(data, path.join_path(0), argument)
 
     if not isinstance(argument, list):
@@ -260,13 +260,13 @@ def op_filter(data: Data, path: JSONPath, argument: JSON, filter_fn: JSON) -> li
     return [
         arg
         for arg in argument
-        if do_ops(cast(Data, arg), path.join_path(1), filter_fn)
+        if do_ops(cast(object, arg), path.join_path(1), filter_fn)
     ]
 
     return results
 
 @op_fn('reduce', evaluate_args=False, pass_data=True)
-def op_reduce(data: Data, path: JSONPath, argument: JSON, reduce_fn: JSON, initial: JSON) -> Any:
+def op_reduce(data: object, path: JSONPath, argument: JSON, reduce_fn: JSON, initial: JSON) -> Any:
     argument = maybe_evaluate(data, path.join_path(0), argument)
     initial = maybe_evaluate(data, path.join_path(2), initial)
 
@@ -283,12 +283,12 @@ def op_reduce(data: Data, path: JSONPath, argument: JSON, reduce_fn: JSON, initi
 
     for arg in argument:
         acc["current"] = arg
-        acc["accumulator"] = do_ops(Data(acc), path.join_path(1), reduce_fn)
+        acc["accumulator"] = do_ops(acc, path.join_path(1), reduce_fn)
 
     return acc["accumulator"]
 
 @op_fn('all', evaluate_args=False, pass_data=True)
-def op_all(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
+def op_all(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
     argument = maybe_evaluate(data, path.join_path(0), argument)
 
     if not isinstance(argument, list):
@@ -298,12 +298,12 @@ def op_all(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
         raise TypeError(f"Op 'all' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return all([
-        do_ops(cast(Data, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.join_path(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
 @op_fn('none', evaluate_args=False, pass_data=True)
-def op_none(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
+def op_none(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
     argument = maybe_evaluate(data, path.join_path(0), argument)
 
     if not isinstance(argument, list):
@@ -313,12 +313,12 @@ def op_none(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
         raise TypeError(f"Op 'none' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return not any([
-        do_ops(cast(Data, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.join_path(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
 @op_fn('some', evaluate_args=False, pass_data=True)
-def op_some(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
+def op_some(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
     argument = maybe_evaluate(data, path.join_path(0), argument)
 
     if not isinstance(argument, list):
@@ -328,7 +328,7 @@ def op_some(data: Data, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
         raise TypeError(f"Op 'some' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return not any([
-        do_ops(cast(Data, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.join_path(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 

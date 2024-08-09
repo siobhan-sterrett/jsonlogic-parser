@@ -1,18 +1,8 @@
-from typing import Any, NewType, TypeVar, ParamSpec
+from typing import Any, TypeVar, ParamSpec
 
 from .json import JSON, JSONPath
 from .jsonlogic import JSONLogic, is_jsonlogic
 from .op_function import do_ops
-    
-Data = NewType('Data', object)
-"""
-Data is what JSONLogic operates on. Data is a container,
-indexable by either integers (list) or strings (dict).
-
-Data is accessed using the "var" operator, which takes
-an index and returns the value at that index in Data.
-For more details, see the 'var_op' function below.
-"""
 
 class NullDataAccess(RuntimeError):
     pass
@@ -37,13 +27,13 @@ class NullData(object):
 T = TypeVar('T')
 P = ParamSpec('P')
 
-def evaluate(data: Data, jsonlogic: JSONLogic) -> Any:
+def evaluate(data: object, jsonlogic: JSONLogic) -> Any:
     """
     Initializes a base JSONPath, and forwards to _evaluate().
     """
-    return do_ops(data, JSONPath('$'), jsonlogic)
+    return do_ops(object, JSONPath('$'), jsonlogic)
 
-def maybe_evaluate(data: Data, path: JSONPath, json: Any) -> Any:
+def maybe_evaluate(data: object, path: JSONPath, json: Any) -> Any:
     """
     A convenience function.
     """
@@ -59,4 +49,4 @@ def pure_evaluate(jsonlogic: JSONLogic) -> JSON:
     Raises NullDataAccess if the jsonlogic attempts to
     access the data object.
     """
-    return evaluate(Data(NullData()), jsonlogic)
+    return evaluate(NullData(), jsonlogic)
