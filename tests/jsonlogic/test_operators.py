@@ -7,7 +7,7 @@ obj = {"a": 1, "b": 2, "c": 3}
 arr = ["d", "e", "f"]
 
 def test_op_var():
-    assert evaluate({"var": "a"}, obj) == 'a'
+    assert evaluate({"var": "a"}, obj) == 1
     assert evaluate({"var": 2}, arr)   == 'f'
 
     assert evaluate({"var": "d"}, obj) is None
@@ -15,6 +15,18 @@ def test_op_var():
 
     assert evaluate({"var": ["d", "default"]}, obj) == "default"
     assert evaluate({"var": [6, "default"]}, arr)   == "default"
+
+def test_op_var_path():
+    obj = {
+        'a': ['b', 'c', 'd'],
+        'e': { 'f': 4 }
+    }
+    arr = [[1, 2, 3], [4, 5, 6]]
+
+    assert evaluate({"var": ""}, obj) == obj
+    assert evaluate({"var": "a.1"}, obj) == 'c'
+    assert evaluate({"var": "e.f"}, obj) == 4
+    assert evaluate({"var": "1.2"}, arr) == 6
 
 def test_op_var_err():
     with pytest.raises(TypeError):

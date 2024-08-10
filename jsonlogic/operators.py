@@ -3,7 +3,7 @@ import operator as py_op
 from functools import reduce
 from typing import (
     # Types
-    Any, Sequence, Type,
+    Any, Mapping, Sequence, Type,
     # functions
     cast, overload
 )
@@ -22,10 +22,9 @@ class _Missing:
 def _has_var(data: object, key: int | str) -> bool:
     try:
         if isinstance(key, str):
-            value: Any = data
-            key_path = JSONPath(key)
-            for part in key_path:
-                value = value[part]
+            keys = '.'.split(key)
+            for key in keys:
+                data = getattr(data, key, None)
         elif isinstance(data, Sequence):
             data[key]
         else:
@@ -38,17 +37,26 @@ def _has_var(data: object, key: int | str) -> bool:
 @op_fn('var', pass_data=True)
 @type_check
 def op_var(data: object, path: JSONPath, key: int | str, default: JSON | Type[_Missing] = _Missing) -> Any | None:
+    data = cast(Mapping[int | str, Any], data)
+
     try:
         if isinstance(key, str):
-            value: Any = data
-            key_path = JSONPath(key)
-            for part in key_path:
-                value = value[part]
-            return data
-        elif isinstance(data, Sequence):
-            data[key]
+            if not key:
+                return data
+            
+            key, *key_path = key.split('.', maxsplit=1)
+
+            try:
+                key = int(key)
+            except ValueError:
+                pass
+
+            if key_path:
+                return op_var(data[key], path, key_path[0], default)
+            else:
+                return data[key]
         else:
-            raise KeyError
+            return data[key]
     except (KeyError, IndexError):
         if default is not _Missing:
             return default
