@@ -1,4 +1,4 @@
-from typing import ClassVar, Self, Sequence
+from typing import Self, Sequence
 
 JSONAtom = bool | int | float | str
 JSONArray = list['JSON | None']
@@ -23,11 +23,9 @@ def json_type(json: JSON) -> str:
         return 'int'
 
 class JSONPath(str):
-    root: ClassVar[Self]
-
     def __new__(cls, path: str) -> Self:
         json_path = super().__new__(cls, path)
-        if not json_path.startswith(f'{cls.root}.'):
+        if not json_path.startswith(f'$.'):
             raise ValueError("JSONPath must start with '$.'")
         return json_path
         
@@ -47,5 +45,3 @@ class JSONPath(str):
 
     def __getattr__(self, idx: str | int) -> 'JSONPath':
         return self.join_path(idx)
-    
-JSONPath.root = JSONPath('$')

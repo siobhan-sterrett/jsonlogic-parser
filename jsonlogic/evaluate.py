@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, TypeVar, ParamSpec
 
 from .json import JSON, JSONObject, JSONPath
@@ -26,6 +27,10 @@ class NullData(object):
     
 T = TypeVar('T')
 P = ParamSpec('P')
+
+@dataclass
+class EvaluationError(RuntimeError):
+    where: JSONPath
 
 def evaluate(data: object, jsonlogic: JSONObject) -> Any:
     """

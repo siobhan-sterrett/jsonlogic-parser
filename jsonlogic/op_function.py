@@ -11,14 +11,10 @@ from typing import (
     cast, get_args, get_origin, get_overloads, overload
 )
 
-from .evaluate import maybe_evaluate
+from .evaluate import maybe_evaluate, EvaluationError
 from .json import JSONArray, JSONPath
 from .jsonlogic import JSONLogic
 from .op_function import Operator
-    
-@dataclass
-class EvaluationError(RuntimeError):
-    where: JSONPath
 
 @dataclass
 class UnrecognizedOperand(EvaluationError):
