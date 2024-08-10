@@ -1,12 +1,10 @@
-from dataclasses import dataclass
-from typing import Any, TypeVar, ParamSpec
+from typing import Any, TypeVar, ParamSpec, overload
 
+from .exc import NullDataAccess
 from .json import JSON, JSONObject, JSONPath
 from .jsonlogic import is_jsonlogic
 from .op_function import do_ops
 
-class NullDataAccess(RuntimeError):
-    pass
 
 class NullData(object):
     """
@@ -28,11 +26,13 @@ class NullData(object):
 T = TypeVar('T')
 P = ParamSpec('P')
 
-@dataclass
-class EvaluationError(RuntimeError):
-    where: JSONPath
-
-def evaluate(data: object, jsonlogic: JSONObject) -> Any:
+@overload
+def evaluate(jsonlogic: JSONObject) -> JSON:
+    ...
+@overload
+def evaluate(jsonlogic: JSONObject, data: object) -> Any:
+    ...
+def evaluate(jsonlogic: JSONObject, data: object = NullData()) -> Any:
     """
     Initializes a base JSONPath, and forwards to _evaluate().
     """
@@ -48,13 +48,3 @@ def maybe_evaluate(data: object, path: JSONPath, json: Any) -> Any:
     if is_jsonlogic(json):
         return do_ops(data, path, json)
     return json
-
-def pure_evaluate(jsonlogic: JSONObject) -> JSON:
-    """
-    Allows for evaluation of "pure" JSONLogic -- logic
-    which does not reference the data object.
-
-    Raises NullDataAccess if the jsonlogic attempts to
-    access the data object.
-    """
-    return evaluate(NullData(), jsonlogic)

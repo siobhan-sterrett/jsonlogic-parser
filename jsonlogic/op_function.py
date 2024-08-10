@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from functools import wraps
 from inspect import signature, Signature, Parameter
 from types import UnionType
@@ -11,21 +10,18 @@ from typing import (
     cast, get_args, get_origin, get_overloads, overload
 )
 
-from .evaluate import maybe_evaluate, EvaluationError
+from .exc import UnrecognizedOperand
 from .json import JSONArray, JSONPath
 from .jsonlogic import JSONLogic
-from .op_function import Operator
 
-@dataclass
-class UnrecognizedOperand(EvaluationError):
-    op: str
+Operator = NewType('Operator', str)
 
 def op_args(jsonlogic: JSONLogic) -> tuple[Operator, JSONArray]:
     op, arg = next(iter(jsonlogic.items()))
     if isinstance(arg, list):
-        return op, arg
+        return Operator(op), arg
     else:
-        return op, [arg]
+        return Operator(op), [arg]
 
 def do_ops(data: object, path: JSONPath, jsonlogic: JSONLogic) -> Any:
     """
@@ -43,9 +39,8 @@ def do_ops(data: object, path: JSONPath, jsonlogic: JSONLogic) -> Any:
     if op_fn := op_fns.get(op):
         return op_fn(data, path, *args)
     else:
-        raise UnrecognizedOperand(where=path, op=op)
+        raise UnrecognizedOperand(path)
 
-Operator = NewType('Operator', str)
 
 T = TypeVar('T')
 P = ParamSpec('P')
@@ -139,6 +134,8 @@ def op_fn(_op: str, *, evaluate_args: bool = True, pass_data: bool = False) -> C
     to the data and path objects passed into _evaluate(). Otherwise, the
     decorated function only receives the operator args.
     """
+
+    from .evaluate import maybe_evaluate
     op = Operator(_op)
 
     @overload
@@ -170,7 +167,7 @@ def op_fn(_op: str, *, evaluate_args: bool = True, pass_data: bool = False) -> C
         def wrapper(data: object, path: JSONPath, *_args: P.args, **kwargs: P.kwargs) -> T:
             if evaluate_args:
                 args = tuple(
-                    maybe_evaluate(data, path.join_path(op).join_path(i), arg)
+                    maybe_evaluate(data, path.append(op).append(i), arg)
                     for i, arg in enumerate(_args))
             else:
                 args = _args

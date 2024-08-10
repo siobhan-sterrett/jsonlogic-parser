@@ -75,15 +75,15 @@ def op_missing_some(data: object, path: JSONPath, count: int, args: list[str]) -
 def op_if(data: object, path: JSONPath, if_arg: JSON, then_arg: JSON, *elses: JSON) -> Any | None:
     offset = 0
 
-    if_arg = maybe_evaluate(data, path.join_path(offset), if_arg)
+    if_arg = maybe_evaluate(data, path.append(offset), if_arg)
 
     while True:
         if if_arg:
-            return maybe_evaluate(data, path.join_path(1 + offset), then_arg)
+            return maybe_evaluate(data, path.append(1 + offset), then_arg)
         else:
             match len(elses):
                 case 0: return None
-                case 1: return maybe_evaluate(data, path.join_path(2 + offset), then_arg)
+                case 1: return maybe_evaluate(data, path.append(2 + offset), elses[0])
                 case _:
                     return op_if(data, path, *elses)
 
@@ -146,12 +146,12 @@ def op_and(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -
     idx = 0
 
     while len(args) > 1:
-        if not (value := maybe_evaluate(data, path.join_path(idx), args[0])):
+        if not (value := maybe_evaluate(data, path.append(idx), args[0])):
             return value
         args = args[1:]
         idx += 1
 
-    return maybe_evaluate(data, path.join_path(idx), args[0])
+    return maybe_evaluate(data, path.append(idx), args[0])
 
 @op_fn('or', evaluate_args=False, pass_data=True)
 def op_or(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
@@ -159,12 +159,12 @@ def op_or(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) ->
     idx = 0
 
     while len(args) > 1:
-        if value := maybe_evaluate(data, path.join_path(idx), args[0]):
+        if value := maybe_evaluate(data, path.append(idx), args[0]):
             return value
         args = args[1:]
         idx += 1
 
-    return maybe_evaluate(data, path.join_path(idx), args[0])
+    return maybe_evaluate(data, path.append(idx), args[0])
 
 @op_fn('<')
 def op_lt(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
@@ -235,7 +235,7 @@ def op_mod(left: int | float, right: int | float) -> int | float:
 
 @op_fn('map', evaluate_args=False, pass_data=True)
 def op_map(data: object, path: JSONPath, argument: JSON, map_fn: JSON) -> list[Any]:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
+    argument = maybe_evaluate(data, path.append(0), argument)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'map' expected array as first parameter, got {json_type(argument)}")
@@ -243,11 +243,11 @@ def op_map(data: object, path: JSONPath, argument: JSON, map_fn: JSON) -> list[A
     if not is_jsonlogic(map_fn):
         raise TypeError(f"Op 'map' expected jsonlogic object as second parameter, got {json_type(map_fn)}")
 
-    return [do_ops(cast(object, arg), path.join_path(1), map_fn) for arg in argument]
+    return [do_ops(cast(object, arg), path.append(1), map_fn) for arg in argument]
 
 @op_fn('filter', evaluate_args=False, pass_data=True)
 def op_filter(data: object, path: JSONPath, argument: JSON, filter_fn: JSON) -> list[Any]:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
+    argument = maybe_evaluate(data, path.append(0), argument)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'filter' expected array as first parameter, got {json_type(argument)}")
@@ -260,15 +260,15 @@ def op_filter(data: object, path: JSONPath, argument: JSON, filter_fn: JSON) -> 
     return [
         arg
         for arg in argument
-        if do_ops(cast(object, arg), path.join_path(1), filter_fn)
+        if do_ops(cast(object, arg), path.append(1), filter_fn)
     ]
 
     return results
 
 @op_fn('reduce', evaluate_args=False, pass_data=True)
 def op_reduce(data: object, path: JSONPath, argument: JSON, reduce_fn: JSON, initial: JSON) -> Any:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
-    initial = maybe_evaluate(data, path.join_path(2), initial)
+    argument = maybe_evaluate(data, path.append(0), argument)
+    initial = maybe_evaluate(data, path.append(2), initial)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'reduce' expected array as first parameter, got {json_type(argument)}")
@@ -283,13 +283,13 @@ def op_reduce(data: object, path: JSONPath, argument: JSON, reduce_fn: JSON, ini
 
     for arg in argument:
         acc["current"] = arg
-        acc["accumulator"] = do_ops(acc, path.join_path(1), reduce_fn)
+        acc["accumulator"] = do_ops(acc, path.append(1), reduce_fn)
 
     return acc["accumulator"]
 
 @op_fn('all', evaluate_args=False, pass_data=True)
 def op_all(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
+    argument = maybe_evaluate(data, path.append(0), argument)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'all' expected array as first parameter, got {json_type(argument)}")
@@ -298,13 +298,13 @@ def op_all(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
         raise TypeError(f"Op 'all' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return all([
-        do_ops(cast(object, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
 @op_fn('none', evaluate_args=False, pass_data=True)
 def op_none(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
+    argument = maybe_evaluate(data, path.append(0), argument)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'none' expected array as first parameter, got {json_type(argument)}")
@@ -313,13 +313,13 @@ def op_none(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool
         raise TypeError(f"Op 'none' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return not any([
-        do_ops(cast(object, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
 @op_fn('some', evaluate_args=False, pass_data=True)
 def op_some(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
-    argument = maybe_evaluate(data, path.join_path(0), argument)
+    argument = maybe_evaluate(data, path.append(0), argument)
 
     if not isinstance(argument, list):
         raise TypeError(f"Op 'some' expected array as first parameter, got {json_type(argument)}")
@@ -328,7 +328,7 @@ def op_some(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool
         raise TypeError(f"Op 'some' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return not any([
-        do_ops(cast(object, arg), path.join_path(i), test_fn)
+        do_ops(cast(object, arg), path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 

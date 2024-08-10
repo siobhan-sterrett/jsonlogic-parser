@@ -24,10 +24,14 @@ def json_type(json: JSON) -> str:
 
 class JSONPath(str):
     def __new__(cls, path: str) -> Self:
-        json_path = super().__new__(cls, path)
-        if not json_path.startswith(f'$.'):
-            raise ValueError("JSONPath must start with '$.'")
-        return json_path
+        if not (path == '$' or path.startswith(f'$.')):
+            raise ValueError("JSONPath must start with root element '$'")
+        
+        return super().__new__(cls, path)
+    
+    @classmethod
+    def from_parts(cls, parts: Sequence[str | int]) -> Self:
+        return cls('.'.join([str(part) for part in parts]))
         
     @property
     def parts(self) -> Sequence[str | int]:
@@ -40,8 +44,8 @@ class JSONPath(str):
 
         return parts
     
-    def join_path(self, part: str | int) -> 'JSONPath':
+    def append(self, part: str | int) -> 'JSONPath':
         return JSONPath('.'.join([self, str(part)]))
 
     def __getattr__(self, idx: str | int) -> 'JSONPath':
-        return self.join_path(idx)
+        return self.append(idx)

@@ -5,9 +5,8 @@ Implementation of JSONLogic: https://jsonlogic.com
 from typing import TypeGuard
 
 from .json import JSON
-from .op_function import Operator
 
-JSONLogic = dict[Operator, JSON]
+JSONLogic = dict[str, JSON]
 """
 JSONLogic is just a JSON that we've confirmed follows the syntactic rules
 of JSONLogic. These are very simple:
