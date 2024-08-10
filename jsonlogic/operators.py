@@ -111,7 +111,6 @@ def op_eq(left: Any, right: Any) -> bool:
         return left == right
 
     if isinstance(left, bool) or isinstance(right, bool):
-        # 0 == False and 1 == True in Python
         return left == right
 
     if isinstance(right, str):
@@ -130,6 +129,9 @@ def op_eq(left: Any, right: Any) -> bool:
 
 @op_fn('===')
 def op_eq_eq(left: Any, right: Any) -> bool:
+    if isinstance(left, bool) or isinstance(right, bool):
+        return left is right
+    
     return left == right
 
 @op_fn('!=')
@@ -149,58 +151,48 @@ def op_not_not(arg: Any) -> bool:
     return not not arg
 
 @op_fn('and', evaluate_args=False, pass_data=True)
-def op_and(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
-    args = (left, right, *args)
-    idx = 0
-
-    while len(args) > 1:
-        if not (value := maybe_evaluate(data, path.append(idx), args[0])):
+def op_and(data: object, path: JSONPath, *args: JSON) -> Any | None:
+    for i, arg in enumerate(args):
+        if not (value := maybe_evaluate(data, path.append(i), arg)):
             return value
-        args = args[1:]
-        idx += 1
-
-    return maybe_evaluate(data, path.append(idx), args[0])
+    
+    return True
 
 @op_fn('or', evaluate_args=False, pass_data=True)
-def op_or(data: object, path: JSONPath, left: JSON, right: JSON, *args: JSON) -> Any | None:
-    args = (left, right, *args)
-    idx = 0
-
-    while len(args) > 1:
-        if value := maybe_evaluate(data, path.append(idx), args[0]):
+def op_or(data: object, path: JSONPath, *args: JSON) -> Any | None:
+    for i, arg in enumerate(args):
+        if value := maybe_evaluate(data, path.append(i), arg):
             return value
-        args = args[1:]
-        idx += 1
-
-    return maybe_evaluate(data, path.append(idx), args[0])
+    
+    return False
 
 @op_fn('<')
-def op_lt(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
-    if righter is _Missing:
-        return left < right
+def op_lt(left: int | float, right: int | float, *args: int | float) -> bool:
+    if args:
+        return left < right and op_lt(right, *args)
     else:
-        return left < right < cast(int | float, righter)
+        return left < right
 
 @op_fn('<=')
-def op_lte(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
-    if righter is _Missing:
-        return left <= right
+def op_lte(left: int | float, right: int | float, *args: int | float) -> bool:
+    if args:
+        return left <= right and op_lte(right, *args)
     else:
-        return left <= right <= cast(int | float, righter)
+        return left <= right
 
 @op_fn('>')
-def op_gt(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
-    if righter is _Missing:
-        return left > right
+def op_gt(left: int | float, right: int | float, *args: int | float) -> bool:
+    if args:
+        return left > right and op_gt(right, *args)
     else:
-        return left > right > cast(int | float, righter)
+        return left > right
 
 @op_fn('>=')
-def op_gte(left: int | float, right: int | float, righter: int | float | Type[_Missing] = _Missing) -> bool:
-    if righter is _Missing:
-        return left >= right
+def op_gte(left: int | float, right: int | float, *args: int | float) -> bool:
+    if args:
+        return left >= right and op_gte(right, *args)
     else:
-        return left >= right >= cast(int | float, righter)
+        return left >= right
 
 @op_fn('max')
 def op_max(*args: int | float) -> int | float:

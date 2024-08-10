@@ -62,7 +62,150 @@ def test_op_eq():
     assert evaluate({"==": ["abc", "abc"]}) is True
     assert evaluate({"==": ["abc", "def"]}) is False
 
+    assert evaluate({"==": [1, 1]}) is True
     assert evaluate({"==": [1, "1"]}) is True
     assert evaluate({"==": [1, "10"]}) is False
+    assert evaluate({"==": [1.5, "1.5"]}) is True
 
+    assert evaluate({"==": [True, 1]}) is True
+    assert evaluate({"==": [False, 0]}) is True
+
+    assert evaluate({"==": [1, 1.5]}) is False
     assert evaluate({"==": ["1", 1.5]}) is False
+    assert evaluate({"==": [True, "true"]}) is False
+
+def test_op_eq_err():
+    with pytest.raises(TypeError):
+        evaluate({"==": []})
+
+    with pytest.raises(TypeError):
+        evaluate({"==": [1, 2, 3]})
+
+# TODO: test_op_neq
+
+def test_op_eq_eq():
+    assert evaluate({"===": ["abc", "abc"]}) is True
+    assert evaluate({"===": ["abc", "def"]}) is False
+
+    assert evaluate({"===": [1, 1]}) is True
+    assert evaluate({"===": [1, "1"]}) is False
+    assert evaluate({"===": [1, "10"]}) is False
+    assert evaluate({"===": [1.5, "1.5"]}) is False
+
+    assert evaluate({"===": [True, 1]}) is False
+    assert evaluate({"===": [False, 0]}) is False
+
+    assert evaluate({"===": [1, 1.5]}) is False
+    assert evaluate({"===": ["1", 1.5]}) is False
+    assert evaluate({"===": [True, "true"]}) is False
+
+
+# TODO: test_op_neq_eq
+
+def test_op_not():
+    assert evaluate({"!": True}) is False
+    assert evaluate({"!": False}) is True
+
+    assert evaluate({"!": 1}) is False
+    assert evaluate({"!": 0}) is True
+
+    assert evaluate({"!": 1.5}) is False
+    assert evaluate({"!": 0.0}) is True
+
+    assert evaluate({"!": [None]}) is True
+
+    assert evaluate({"!": [["a", "b", "c"]]}) is False
+    assert evaluate({"!": [[]]}) is True
+
+    assert evaluate({"!": {"a": 1, "b": 2}}) is False
+    assert evaluate({"!": {}}) is True
+
+def test_op_not_not():
+    assert evaluate({"!!": True}) is True
+    assert evaluate({"!!": False}) is False
+
+    assert evaluate({"!!": 1}) is True
+    assert evaluate({"!!": 0}) is False
+
+    assert evaluate({"!!": 1.5}) is True
+    assert evaluate({"!!": 0.0}) is False
+
+    assert evaluate({"!!": [None]}) is False
+
+    assert evaluate({"!!": [["a", "b", "c"]]}) is True
+    assert evaluate({"!!": [[]]}) is False
+
+    assert evaluate({"!!": {"a": 1, "b": 2}}) is True
+    assert evaluate({"!!": {}}) is False
+
+def test_op_and():
+    assert evaluate({"and": [True, False]}) is False
+    assert evaluate({"and": [True, True]}) is True
+
+    assert evaluate({"and": [1, 0, 2]}) == 0
+    assert evaluate({"and": [1, 2, 3]}) is True
+
+    assert evaluate({"and": [1]}) is True
+    assert evaluate({"and": [0]}) == 0
+
+    assert evaluate({"and": []}) is True
+
+def test_op_or():
+    assert evaluate({"or": [False, False]}) is False
+    assert evaluate({"or": [False, True]}) is True
+
+    assert evaluate({"or": [0, 1, 0]}) == 1
+    assert evaluate({"or": [0, None, False]}) is False
+
+    assert evaluate({"or": [1]}) is 1
+    assert evaluate({"or": [0]}) == 0
+
+    assert evaluate({"or": []}) is False
+
+def test_op_lt():
+    assert evaluate({"<": [1, 2]}) is True
+    assert evaluate({"<": [2, 1]}) is False
+    assert evaluate({"<": [2, 2]}) is False
+
+    assert evaluate({"<": [1, 2, 3]}) is True
+    assert evaluate({"<": [1, 1, 3]}) is False
+    assert evaluate({"<": [1, 2, 0]}) is False
+
+    assert evaluate({"<": [1, 2, 3, 4, 5]}) is True
+    assert evaluate({"<": [1, 2, 3, 5, 4]}) is False
+
+def test_op_lte():
+    assert evaluate({"<=": [1, 2]}) is True
+    assert evaluate({"<=": [2, 1]}) is False
+    assert evaluate({"<=": [2, 2]}) is True
+
+    assert evaluate({"<=": [1, 2, 3]}) is True
+    assert evaluate({"<=": [1, 1, 3]}) is True
+    assert evaluate({"<=": [1, 2, 0]}) is False
+
+    assert evaluate({"<=": [1, 2, 3, 4, 5]}) is True
+    assert evaluate({"<=": [1, 2, 3, 5, 4]}) is False
+
+def test_op_gt():
+    assert evaluate({">": [1, 2]}) is True
+    assert evaluate({">": [2, 1]}) is False
+    assert evaluate({">": [2, 2]}) is False
+
+    assert evaluate({">": [1, 2, 3]}) is True
+    assert evaluate({">": [1, 1, 3]}) is False
+    assert evaluate({">": [1, 2, 0]}) is False
+
+    assert evaluate({">": [1, 2, 3, 4, 5]}) is True
+    assert evaluate({">": [1, 2, 3, 5, 4]}) is False
+
+def test_op_gte():
+    assert evaluate({">=": [1, 2]}) is True
+    assert evaluate({">=": [2, 1]}) is False
+    assert evaluate({">=": [2, 2]}) is True
+
+    assert evaluate({">=": [1, 2, 3]}) is True
+    assert evaluate({">=": [1, 1, 3]}) is True
+    assert evaluate({">=": [1, 2, 0]}) is False
+
+    assert evaluate({">=": [1, 2, 3, 4, 5]}) is True
+    assert evaluate({">=": [1, 2, 3, 5, 4]}) is False
