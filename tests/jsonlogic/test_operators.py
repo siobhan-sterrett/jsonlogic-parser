@@ -51,6 +51,17 @@ def test_op_if():
     assert evaluate({"if": [False, "a", True, "b", "c"]}) == "b"
     assert evaluate({"if": [False, "a", False, "b", False, "c", "d"]}) == "d"
 
+    import io
+    import contextlib
+
+    with io.StringIO() as output:
+        with contextlib.redirect_stdout(output):
+            evaluate({"if": [True, "a", {"log": "foo"}]})
+            assert len(output.getvalue()) == 0
+
+            evaluate({"if": [False, {"log": "foo"}, "b"]})
+            assert len(output.getvalue()) == 0
+
 def test_op_if_err():
     with pytest.raises(TypeError):
         evaluate({"if": []})
@@ -187,25 +198,90 @@ def test_op_lte():
     assert evaluate({"<=": [1, 2, 3, 5, 4]}) is False
 
 def test_op_gt():
-    assert evaluate({">": [1, 2]}) is True
-    assert evaluate({">": [2, 1]}) is False
+    assert evaluate({">": [2, 1]}) is True
+    assert evaluate({">": [1, 2]}) is False
     assert evaluate({">": [2, 2]}) is False
 
-    assert evaluate({">": [1, 2, 3]}) is True
-    assert evaluate({">": [1, 1, 3]}) is False
-    assert evaluate({">": [1, 2, 0]}) is False
+    assert evaluate({">": [3, 2, 1]}) is True
+    assert evaluate({">": [1, 2, 3]}) is False
+    assert evaluate({">": [3, 2, 4]}) is False
 
-    assert evaluate({">": [1, 2, 3, 4, 5]}) is True
-    assert evaluate({">": [1, 2, 3, 5, 4]}) is False
+    assert evaluate({">": [5, 4, 3, 2, 1]}) is True
+    assert evaluate({">": [5, 4, 3, 1, 2]}) is False
 
 def test_op_gte():
-    assert evaluate({">=": [1, 2]}) is True
-    assert evaluate({">=": [2, 1]}) is False
+    assert evaluate({">=": [2, 1]}) is True
+    assert evaluate({">=": [1, 2]}) is False
     assert evaluate({">=": [2, 2]}) is True
 
-    assert evaluate({">=": [1, 2, 3]}) is True
-    assert evaluate({">=": [1, 1, 3]}) is True
-    assert evaluate({">=": [1, 2, 0]}) is False
+    assert evaluate({">=": [3, 2, 1]}) is True
+    assert evaluate({">=": [3, 3, 1]}) is True
+    assert evaluate({">=": [3, 2, 4]}) is False
 
-    assert evaluate({">=": [1, 2, 3, 4, 5]}) is True
-    assert evaluate({">=": [1, 2, 3, 5, 4]}) is False
+    assert evaluate({">=": [5, 4, 3, 2, 1]}) is True
+    assert evaluate({">=": [5, 4, 3, 1, 2]}) is False
+
+def test_op_max():
+    pass
+
+def test_op_min():
+    pass
+
+def test_op_add():
+    pass
+
+def test_op_sub():
+    pass
+
+def test_op_mul():
+    pass
+
+def test_op_div():
+    pass
+
+def test_op_mod():
+    pass
+
+def test_op_map():
+    pass
+
+def test_op_filter():
+    pass
+
+def test_op_reduce():
+    pass
+
+def test_op_all():
+    pass
+
+def test_op_none():
+    pass
+
+def test_op_some():
+    pass
+
+def test_op_merge():
+    pass
+
+def test_op_in():
+    pass
+
+def test_op_cat():
+    pass
+
+def test_op_substr():
+    pass
+
+def test_op_log():
+    import contextlib
+    import io
+
+    with io.StringIO() as output:
+        with contextlib.redirect_stdout(output):
+            assert evaluate({"log": "foo"}) == "foo"
+            assert output.getvalue() == "foo\n"
+    
+    with io.StringIO() as output:
+        with contextlib.redirect_stdout(output):
+            assert evaluate({"log": {"+": [1, 2, 3]}}) == 6
+            assert output.getvalue() == "6\n"

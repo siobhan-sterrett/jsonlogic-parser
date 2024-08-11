@@ -195,12 +195,12 @@ def op_gte(left: int | float, right: int | float, *args: int | float) -> bool:
         return left >= right
 
 @op_fn('max')
-def op_max(*args: int | float) -> int | float:
-    return max(args)
+def op_max(arg: int | float, *args: int | float) -> int | float:
+    return max(arg, *args)
 
 @op_fn('min')
-def op_min(*args: int | float) -> int | float:
-    return min(args)
+def op_min(arg: int | float, *args: int | float) -> int | float:
+    return min(arg, *args)
 
 @overload
 def op_add(arg: str) -> float:
@@ -358,7 +358,7 @@ def op_substr(arg: str, start: int, end: int | Type[_Missing] = _Missing) -> str
         end = len(arg)
     return arg[start:end]
 
-@op_fn('log', evaluate_args=False)
-def op_log(arg: JSON) -> JSON:
+@op_fn('log')
+def op_log(arg: object) -> object:
     print(arg)
     return arg
