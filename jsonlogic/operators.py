@@ -22,14 +22,14 @@ class _Missing:
 def _has_var(data: object, key: int | str) -> bool:
     try:
         if isinstance(key, str):
-            keys = '.'.split(key)
+            keys = key.split('.')
             for key in keys:
-                data = getattr(data, key, None)
+                data = getattr(data, '__getitem__')(key)
         elif isinstance(data, Sequence):
             data[key]
         else:
             return False
-    except (KeyError, IndexError):
+    except (AttributeError, KeyError, IndexError):
         return False
     else:
         return True
@@ -140,7 +140,7 @@ def op_neq(left: Any, right: Any) -> bool:
 
 @op_fn('!==')
 def op_neq_eq(left: Any, right: Any) -> bool:
-    return left != right
+    return not op_eq_eq(left, right)
 
 @op_fn('!')
 def op_not(arg: Any) -> bool:
@@ -298,7 +298,7 @@ def op_all(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
         raise TypeError(f"Op 'all' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return all([
-        do_ops(cast(object, arg), path.append(i), test_fn)
+        do_ops(arg, path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
@@ -313,7 +313,7 @@ def op_none(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool
         raise TypeError(f"Op 'none' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
     return not any([
-        do_ops(cast(object, arg), path.append(i), test_fn)
+        do_ops(arg, path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 
@@ -321,14 +321,14 @@ def op_none(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool
 def op_some(data: object, path: JSONPath, argument: JSON, test_fn: JSON) -> bool:
     argument = maybe_evaluate(data, path.append(0), argument)
 
-    if not isinstance(argument, list):
+    if not isinstance(argument, Sequence):
         raise TypeError(f"Op 'some' expected array as first parameter, got {json_type(argument)}")
 
     if not is_jsonlogic(test_fn):
         raise TypeError(f"Op 'some' expected jsonlogic object as second parameter, got {json_type(test_fn)}")
 
-    return not any([
-        do_ops(cast(object, arg), path.append(i), test_fn)
+    return any([
+        do_ops(arg, path.append(i), test_fn)
         for i, arg in enumerate(argument)
     ])
 

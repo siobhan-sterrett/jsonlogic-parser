@@ -35,8 +35,14 @@ def test_op_var_err():
     with pytest.raises(TypeError):
         evaluate({"var": ["a", "b", "c"]}, obj)
 
-# TODO: op_missing
-# TODO: op_missing_some
+def test_op_missing():
+    assert evaluate({"missing": ["a", "b", "c"]}, obj) == []
+    assert evaluate({"missing": ["c", "d", "e"]}, obj) == ["d", "e"]
+
+def test_op_missing_some():
+    assert evaluate({"missing_some": [2, ["a", "b", "c"]]}, obj) == []
+    assert evaluate({"missing_some": [2, ["b", "c", "d"]]}, obj) == []
+    assert evaluate({"missing_some": [2, ["c", "d", "e"]]}, obj) == ["d", "e"]
 
 def test_op_if():
     assert evaluate({"if": [True, "a"]}) == "a"
@@ -92,7 +98,21 @@ def test_op_eq_err():
     with pytest.raises(TypeError):
         evaluate({"==": [1, 2, 3]})
 
-# TODO: test_op_neq
+def test_op_neq():
+    assert evaluate({"!=": ["abc", "abc"]}) is False
+    assert evaluate({"!=": ["abc", "def"]}) is True
+
+    assert evaluate({"!=": [1, 1]}) is False
+    assert evaluate({"!=": [1, "1"]}) is False
+    assert evaluate({"!=": [1, "10"]}) is True
+    assert evaluate({"!=": [1.5, "1.5"]}) is False
+
+    assert evaluate({"!=": [True, 1]}) is False
+    assert evaluate({"!=": [False, 0]}) is False
+
+    assert evaluate({"!=": [1, 1.5]}) is True
+    assert evaluate({"!=": ["1", 1.5]}) is True
+    assert evaluate({"!=": [True, "true"]}) is True
 
 def test_op_eq_eq():
     assert evaluate({"===": ["abc", "abc"]}) is True
@@ -111,7 +131,21 @@ def test_op_eq_eq():
     assert evaluate({"===": [True, "true"]}) is False
 
 
-# TODO: test_op_neq_eq
+def test_op_neq_eq():
+    assert evaluate({"!==": ["abc", "abc"]}) is False
+    assert evaluate({"!==": ["abc", "def"]}) is True
+
+    assert evaluate({"!==": [1, 1]}) is False
+    assert evaluate({"!==": [1, "1"]}) is True
+    assert evaluate({"!==": [1, "10"]}) is True
+    assert evaluate({"!==": [1.5, "1.5"]}) is True
+
+    assert evaluate({"!==": [True, 1]}) is True
+    assert evaluate({"!==": [False, 0]}) is True
+
+    assert evaluate({"!==": [1, 1.5]}) is True
+    assert evaluate({"!==": ["1", 1.5]}) is True
+    assert evaluate({"!==": [True, "true"]}) is True
 
 def test_op_not():
     assert evaluate({"!": True}) is False
@@ -222,55 +256,79 @@ def test_op_gte():
     assert evaluate({">=": [5, 4, 3, 1, 2]}) is False
 
 def test_op_max():
-    pass
+    assert evaluate({"max": [1, 2, 3]}) == 3
 
 def test_op_min():
-    pass
+    assert evaluate({"min": [1, 2, 3]}) == 1
 
 def test_op_add():
-    pass
+    assert evaluate({"+": "3.5"}) == 3.5
+    assert evaluate({"+": []}) == 0
+    assert evaluate({"+": [2]}) == 2
+    assert evaluate({"+": [2, 3]}) == 5
+    assert evaluate({"+": [2, 3, 4]}) == 9
 
 def test_op_sub():
-    pass
+    assert evaluate({"-": 5}) == -5
+    assert evaluate({"-": [5, 3]}) == 2
 
 def test_op_mul():
-    pass
+    assert evaluate({"*": []}) == 1
+    assert evaluate({"*": [2]}) == 2
+    assert evaluate({"*": [2, 3]}) == 6
+    assert evaluate({"*": [2, 3, 4]}) == 24
 
 def test_op_div():
-    pass
+    assert evaluate({"/": [5, 2]}) == 2.5
 
 def test_op_mod():
-    pass
+    assert evaluate({"%": [10, 3]}) == 1
 
 def test_op_map():
-    pass
+    assert evaluate({"map": [[1, 2, 3], {"+": [{"var": ""}, 1]}]}) == [2, 3, 4]
 
 def test_op_filter():
-    pass
+    assert evaluate({"filter": [[1, 2, 3, 4, 5], {"==": [{"%": [{"var": ""}, 2]}, 1]}]}) == [1, 3, 5]
 
 def test_op_reduce():
-    pass
+    assert evaluate({"reduce": [[1, 2, 3], {"+": [{"var": "current"}, {"var": "accumulator"}]}, 5]}) == 11
 
 def test_op_all():
-    pass
+    assert evaluate({"all": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 10]}]}) is True
+    assert evaluate({"all": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 3]}]}) is False
+    assert evaluate({"all": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 0]}]}) is False
 
 def test_op_none():
-    pass
+    assert evaluate({"none": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 10]}]}) is False
+    assert evaluate({"none": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 3]}]}) is False
+    assert evaluate({"none": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 0]}]}) is True
 
 def test_op_some():
-    pass
+    assert evaluate({"some": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 10]}]}) is True
+    assert evaluate({"some": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 3]}]}) is True
+    assert evaluate({"some": [[1, 2, 3, 4, 5], {"<": [{"var": ""}, 0]}]}) is False
 
 def test_op_merge():
-    pass
+    assert evaluate({"merge": ["a", ["b", "c"], "d"]}) == ["a", "b", "c", "d"]
 
 def test_op_in():
-    pass
+    assert evaluate({"in": ["c", "abcdef"]}) is True
+    assert evaluate({"in": ["cde", "abcdef"]}) is True
+    assert evaluate({"in": ["x", "abcdef"]}) is False
+
+    assert evaluate({"in": ["c", ["a", "b", "c"]]}) is True
+    assert evaluate({"in": ["x", ["a", "b", "c"]]}) is False
 
 def test_op_cat():
-    pass
+    assert evaluate({"cat": ["abc", "def"]}) == "abcdef"
+    assert evaluate({"cat": ["abc", ""]}) == "abc"
 
 def test_op_substr():
-    pass
+    assert evaluate({"substr": ["jsonlogic", 4]}) == "logic"
+    assert evaluate({"substr": ["jsonlogic", -5]}) == "logic"
+
+    assert evaluate({"substr": ["jsonlogic", 0, 4]}) == "json"
+    assert evaluate({"substr": ["jsonlogic", 0, -5]}) == "json"
 
 def test_op_log():
     import contextlib
