@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "jsonlogic"
+name = "jsonlogic-parser"
 version = "0.1.0"
 description = ""
 authors = ["Siobhán Sterrett <siobhansterrett@gmail.com>"]
