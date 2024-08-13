@@ -1,10 +1,13 @@
 import pytest
 
-from jsonlogic.evaluate import evaluate
+from jsonlogic.evaluate import Evaluator
 from jsonlogic.operators import *
 
 obj = {"a": 1, "b": 2, "c": 3}
 arr = ["d", "e", "f"]
+
+evaluator = Evaluator()
+evaluate = evaluator.evaluate
 
 def test_op_var():
     assert evaluate({"var": "a"}, obj) == 1
@@ -27,6 +30,9 @@ def test_op_var_path():
     assert evaluate({"var": "a.1"}, obj) == 'c'
     assert evaluate({"var": "e.f"}, obj) == 4
     assert evaluate({"var": "1.2"}, arr) == 6
+
+    assert evaluate({"var": ["e.g", "foo"]}, obj) == "foo"
+    assert evaluate({"var": ["1.5", "foo"]}, arr) == "foo"
 
 def test_op_var_err():
     with pytest.raises(TypeError):

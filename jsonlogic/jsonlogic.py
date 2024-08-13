@@ -2,38 +2,34 @@
 Implementation of JSONLogic: https://jsonlogic.com
 """
 
-from typing import TypeGuard
+from typing import Self
 
 from .json import JSON
 
-JSONLogic = dict[str, JSON]
-"""
-JSONLogic is just a JSON that we've confirmed follows the syntactic rules
-of JSONLogic. These are very simple:
-- The JSON must be a JSONObject (i.e. a dict[str, JSON | None]).
-- The JSONObject must have exactly one key.
-- The value associated with that key cannot be None.
-"""
+class JSONLogic:
+    op: str
+    args: list['JSON | JSONLogic']
 
-def is_jsonlogic(json: JSON) -> TypeGuard[JSONLogic]:
-    """
-    Returns True if json is syntactically-correct JSONLogic,
-    False otherwise.
+    def __init__(self, json: JSON):
+        if isinstance(json, dict):
+            if len(json) == 1:
+                op, arg = next(iter(json.items()))
+                if arg is not None:
+                    self.op = op
+                    self.args = []
+                    if isinstance(arg, list):
+                        for _arg in arg:
+                            self.args.append(self.maybe_parse(_arg))
+                    else:
+                        self.args.append(self.maybe_parse(arg))
+                    
+                    return
+                
+        raise ValueError('Invalid JSONLogic')
 
-    Note that this function only asserts that json can be
-    _parsed_ as JSONLogic. The JSONLogic itself may have
-    semantic or logical errors, such as referring to an
-    operator that doesn't exist.
-
-    'TypeGuard[JSONLogic]' means that if this function
-    returns True, the type-checker knows that json is
-    JSONLogic.
-    """
-
-    if isinstance(json, dict):
-        if len(json) == 1:
-            value = next(iter(json.values()))
-            if value is not None:
-                return True
-
-    return False
+    @classmethod
+    def maybe_parse(cls, json: JSON) -> Self | JSON:
+        try:
+            return cls(json)
+        except ValueError:
+            return json

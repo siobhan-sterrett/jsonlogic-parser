@@ -1,29 +1,15 @@
 from typing import Self, Sequence
 
-JSONAtom = bool | int | float | str
-JSONArray = list['JSON | None']
-JSONObject = dict[str, 'JSON | None']
+JSONAtom = None | bool | int | float | str
+JSONArray = list['JSON']
+JSONObject = dict[str, 'JSON']
 JSON = JSONAtom | JSONArray | JSONObject
 """
 Definitions of JSON types in Python.
 """
 
-def json_type(json: JSON) -> str:
-    if isinstance(json, dict):
-        return 'object'
-    elif isinstance(json, list):
-        return 'array'
-    elif isinstance(json, str):
-        return 'string'
-    elif isinstance(json, float):
-        return 'float'
-    elif json in (True, False):
-        return 'boolean'
-    else:
-        return 'int'
-
 class JSONPath:
-    __slots__ = ('path')
+    path: str
 
     def __init__(self, path: str):
         if not (path == '$' or path.startswith('$.') or path.startswith('$[')):
